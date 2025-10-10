@@ -10,7 +10,7 @@ export const getAIFacts = query({
   handler: async ({ db }, { paginationOpts, categoryId }) => {
     const page = await db
       .query("ai_facts")
-      .withIndex("by_category_and_time", (q) => q.eq("categoryId", categoryId))
+      .withIndex("by_category", (q) => q.eq("categoryId", categoryId))
       .order("desc")
       .paginate(paginationOpts);
 

@@ -16,7 +16,7 @@ export default defineSchema({
     content: v.string(),
     categoryId: v.id("categories"),
     image: v.optional(v.string()),
-  }).index("by_category_and_time", ["categoryId", "_creationTime"]),
+  }).index("by_category", ["categoryId"]),
 
   // AI-generated facts
   ai_facts: defineTable({
@@ -24,5 +24,5 @@ export default defineSchema({
     content: v.string(),
     categoryId: v.id("categories"),
     image: v.optional(v.string()),
-  }).index("by_category_and_time", ["categoryId", "_creationTime"]),
+  }).index("by_category", ["categoryId"]),
 });

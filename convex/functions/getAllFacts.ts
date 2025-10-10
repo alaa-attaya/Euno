@@ -8,25 +8,26 @@ export const getFactsByCategory = query({
     categoryId: v.id("categories"),
   },
   handler: async ({ db }, { paginationOpts, categoryId }) => {
-    // Fetch a batch from both tables
+    // Fetch a batch from seeded facts
     const seededPage = await db
       .query("seeded_facts")
-      .withIndex("by_category_and_time", (q) => q.eq("categoryId", categoryId))
-      .order("desc")
+      .withIndex("by_category", (q) => q.eq("categoryId", categoryId))
+      .order("desc") // sorts by _creationTime automatically
       .paginate(paginationOpts);
 
+    // Fetch a batch from AI-generated facts
     const aiPage = await db
       .query("ai_facts")
-      .withIndex("by_category_and_time", (q) => q.eq("categoryId", categoryId))
+      .withIndex("by_category", (q) => q.eq("categoryId", categoryId))
       .order("desc")
       .paginate(paginationOpts);
 
-    // Merge and sort by creation time
+    // Merge both pages and sort by _creationTime descending
     const merged = [...seededPage.page, ...aiPage.page].sort(
       (a, b) => b._creationTime - a._creationTime
     );
 
-    // Decide which table to fetch next from based on cursors
+    // Keep track of individual cursors
     const continueCursor = {
       seeded: seededPage.continueCursor,
       ai: aiPage.continueCursor,
