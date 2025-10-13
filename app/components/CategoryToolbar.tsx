@@ -56,7 +56,7 @@ export default function CategoryToolbar() {
 
   return (
     <View
-      className={`absolute left-4 right-4 flex-row items-center p-3 rounded-full shadow-lg`}
+      className={`absolute left-4 right-4 flex-row items-center p-3 rounded-3xl shadow-lg`}
       style={{
         bottom: insets.bottom + 20,
         backgroundColor: isDark ? "#191724" : "#FEFBF3",
@@ -93,7 +93,7 @@ export default function CategoryToolbar() {
       </ScrollView>
 
       {/* Sticky Generate (+) Button */}
-      <Pressable className="ml-auto w-16 h-16 bg-secondary rounded-full items-center justify-center shadow-lg">
+      <Pressable className=" ml-auto w-16 h-16 bg-secondary rounded-full items-center justify-center shadow-lg">
         <Text className="text-white text-2xl font-bold">+</Text>
       </Pressable>
     </View>

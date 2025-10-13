@@ -56,8 +56,8 @@ export const generateAIFacts = action({
     const prompt = `
 Generate 20-30 short, unique, educational facts about "${category.name}".
 Return ONLY a valid JSON array of objects with:
-  "title": a catchy 3–8 word phrase (no punctuation)
-  "content": one clear fact sentence (max 25 words)
+  "title": a catchy 3-8 word phrase (no punctuation)
+  "content": one clear fact sentence (max 50 words)
 No explanations or extra text.
 `;
 
