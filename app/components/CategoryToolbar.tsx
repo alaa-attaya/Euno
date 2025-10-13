@@ -1,4 +1,4 @@
-// app/components/CategoryToolbar.tsx
+"use client";
 import { Entypo, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
@@ -56,7 +56,7 @@ export default function CategoryToolbar() {
 
   return (
     <View
-      className={`absolute left-4 right-4 flex-row items-center p-3 rounded-3xl shadow-lg`}
+      className="absolute left-4 right-4 flex-row items-center p-3 rounded-3xl shadow-lg"
       style={{
         bottom: insets.bottom + 20,
         backgroundColor: isDark ? "#191724" : "#FEFBF3",
@@ -76,26 +76,27 @@ export default function CategoryToolbar() {
           <Pressable
             key={cat.id}
             onPress={() => setSelected(cat.id)}
-            className={`
-              w-16 h-16 mr-3 rounded-full flex items-center justify-center
-              ${isDark ? "bg-[#2A2A3D]" : "bg-[#F0F0F0]"}
-              ${selected === cat.id ? "border-2 border-accent" : ""}
-            `}
+            className={`rounded-full flex items-center justify-center ${
+              selected === cat.id ? "border-2 border-accent" : ""
+            }`}
+            style={{
+              width: 64,
+              height: 64,
+              marginRight: 10,
+              backgroundColor: isDark ? "#2A2A3D" : "#F0F0F0",
+            }}
           >
             {cat.icon}
             <Text
-              className={`text-[10px] mt-1 text-center font-sans ${isDark ? "text-white" : "text-black"}`}
+              className={`text-[10px] mt-1 text-center font-sans ${
+                isDark ? "text-white" : "text-black"
+              }`}
             >
               {cat.name}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
-
-      {/* Sticky Generate (+) Button */}
-      <Pressable className=" ml-auto w-16 h-16 bg-secondary rounded-full items-center justify-center shadow-lg">
-        <Text className="text-white text-2xl font-bold">+</Text>
-      </Pressable>
     </View>
   );
 }
