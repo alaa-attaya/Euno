@@ -7,12 +7,12 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 export default function CardSkeletonPager() {
   const isDark = useColorScheme() === "dark";
-  const skeletonCount = 1; // show 1 skeleton card
+  const skeletonCount = 3; // show 1 skeleton card
 
   return (
     <View className="flex-1 justify-center items-center">
       <PagerView
-        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.75 }}
+        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.8 }}
         initialPage={0}
         scrollEnabled={true}
         pageMargin={0}
@@ -26,13 +26,8 @@ export default function CardSkeletonPager() {
             className="mx-4 my-4 rounded-3xl shadow-lg"
             style={{
               width: SCREEN_WIDTH - 32,
-              height: SCREEN_HEIGHT * 0.65,
-              backgroundColor: isDark ? "#2A2A3D" : "#F0F0F0",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.35,
-              shadowRadius: 12,
-              elevation: 14,
+              height: SCREEN_HEIGHT * 0.6,
+              backgroundColor: isDark ? "#2A2A3D" : "#FEFBF3",
               padding: 24,
               justifyContent: "center",
               alignItems: "center",

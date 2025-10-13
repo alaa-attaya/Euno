@@ -14,17 +14,12 @@ export default function CategorySkeleton() {
         position: "absolute",
         left: 16,
         right: 16,
-        bottom: insets.bottom + 20,
+        bottom: insets.bottom + 64,
         flexDirection: "row",
         alignItems: "center",
         padding: 12,
         borderRadius: 24,
-        backgroundColor: isDark ? "#191724" : "#FEFBF3",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
-        elevation: 8,
+        backgroundColor: isDark ? "#2A2A3D" : "#FEFBF3",
       }}
     >
       {Array.from({ length: skeletonCount }).map((_, i) => (
@@ -36,7 +31,7 @@ export default function CategorySkeleton() {
             height: 64,
             borderRadius: 32,
             marginRight: 10,
-            backgroundColor: isDark ? "#2A2A3D" : "#E0E0E0",
+            backgroundColor: isDark ? "#444" : "#DDD",
           }}
         />
       ))}

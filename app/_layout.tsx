@@ -16,7 +16,7 @@ export default function RootLayout() {
           headerShown: false,
           contentStyle: {
             backgroundColor:
-              systemColorScheme === "dark" ? "#191724" : "#FEFBF3",
+              systemColorScheme === "dark" ? "#191724" : "#F7F3EE",
           },
         }}
       />

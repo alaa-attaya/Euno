@@ -8,7 +8,7 @@ module.exports = {
         accent: "#F6757A",
         secondary: "#F9BD72",
         darkBg: "#191724",
-        lightBg: "#FEFBF3",
+        lightBg: "#F7F3EE",
         cardBg: "rgba(255,255,255,0.05)",
       },
       fontFamily: {

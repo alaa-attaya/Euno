@@ -58,13 +58,8 @@ export default function CategoryToolbar() {
     <View
       className="absolute left-4 right-4 flex-row items-center p-3 rounded-3xl shadow-lg"
       style={{
-        bottom: insets.bottom + 20,
-        backgroundColor: isDark ? "#191724" : "#FEFBF3",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.25,
-        shadowRadius: 5,
-        elevation: 8,
+        bottom: insets.bottom + 64,
+        backgroundColor: isDark ? "#2A2A3D" : "#FEFBF3",
       }}
     >
       <ScrollView
@@ -83,7 +78,7 @@ export default function CategoryToolbar() {
               width: 64,
               height: 64,
               marginRight: 10,
-              backgroundColor: isDark ? "#2A2A3D" : "#F0F0F0",
+              backgroundColor: isDark ? "#3A3A50" : "#F0F0F0",
             }}
           >
             {cat.icon}

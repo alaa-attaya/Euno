@@ -81,7 +81,7 @@ export default function FactPager() {
   return (
     <View className="flex-1 justify-center items-center">
       <PagerView
-        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.75 }}
+        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.8 }}
         initialPage={0}
         onPageSelected={handlePageSelected}
         scrollEnabled={true} // swipeable
@@ -96,13 +96,8 @@ export default function FactPager() {
             className="mx-4 my-4 rounded-3xl p-6 justify-center items-center shadow-lg"
             style={{
               width: SCREEN_WIDTH - 32,
-              height: SCREEN_HEIGHT * 0.65, // taller card
-              backgroundColor: isDark ? "#1E1E1E" : "#FEFBF3",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.35,
-              shadowRadius: 12,
-              elevation: 14,
+              height: SCREEN_HEIGHT * 0.6, // taller card
+              backgroundColor: isDark ? "#2A2A3D" : "#FEFBF3",
             }}
           >
             <Text
