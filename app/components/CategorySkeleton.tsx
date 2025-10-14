@@ -30,7 +30,7 @@ export default function CategorySkeleton() {
             width: 64,
             height: 64,
             borderRadius: 32,
-            marginRight: 10,
+            marginRight: 8,
             backgroundColor: isDark ? "#444" : "#DDD",
           }}
         />
