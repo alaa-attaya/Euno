@@ -9,9 +9,11 @@ export const getAIFacts = query({
   },
   handler: async ({ db }, { paginationOpts, categoryId }) => {
     const page = await db
-      .query("ai_facts")
-      .withIndex("by_category", (q) => q.eq("categoryId", categoryId))
-      .order("desc")
+      .query("facts")
+      .withIndex("by_category_and_ai", (q) =>
+        q.eq("categoryId", categoryId).eq("is_ai_generated", true)
+      )
+      .order("desc") // sorts by _creationTime automatically
       .paginate(paginationOpts);
 
     return page;

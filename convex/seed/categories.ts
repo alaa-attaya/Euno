@@ -12,30 +12,81 @@ export interface SeedCategoryResult {
 export async function seedCategories({
   db,
 }: SeedCategoryArgs): Promise<SeedCategoryResult> {
+  // Categories with Expo icon set, name, and color
   const categories = [
+    {
+      name: "General",
+      description: "Miscellaneous fun facts",
+      iconSet: "MaterialIcons",
+      iconName: "apps",
+      iconColor: "#F6757A",
+    },
     {
       name: "Science",
       description: "Fun science facts",
-      image: "/assets/categories/science.png",
+      iconSet: "Entypo",
+      iconName: "lab",
+      iconColor: "#F9BD72",
     },
     {
       name: "History",
       description: "Events from the past",
-      image: "/assets/categories/history.png",
+      iconSet: "MaterialIcons",
+      iconName: "history-edu",
+      iconColor: "#2563EB",
     },
     {
       name: "Animals",
       description: "Animal kingdom facts",
-      image: "/assets/categories/animals.png",
+      iconSet: "FontAwesome5",
+      iconName: "paw",
+      iconColor: "#10B981",
     },
     {
       name: "Technology",
       description: "Innovation facts",
-      image: "/assets/categories/technology.png",
+      iconSet: "MaterialIcons",
+      iconName: "memory",
+      iconColor: "#F9BD72",
+    },
+    {
+      name: "Space",
+      description: "Out-of-this-world facts",
+      iconSet: "Entypo",
+      iconName: "rocket",
+      iconColor: "#2563EB",
+    },
+    {
+      name: "Geography",
+      description: "Facts about Earth",
+      iconSet: "Entypo",
+      iconName: "globe",
+      iconColor: "#10B981",
+    },
+    {
+      name: "Sports",
+      description: "Records and achievements",
+      iconSet: "MaterialIcons",
+      iconName: "sports-soccer",
+      iconColor: "#F6757A",
+    },
+    {
+      name: "Art",
+      description: "Creative masterpieces",
+      iconSet: "Entypo",
+      iconName: "palette",
+      iconColor: "#F9BD72",
+    },
+    {
+      name: "Food",
+      description: "Delicious discoveries",
+      iconSet: "MaterialIcons",
+      iconName: "restaurant",
+      iconColor: "#2563EB",
     },
   ];
 
-  // Delete all previously seeded categories
+  // Delete any existing categories
   const existingCategories = await db.query("categories").collect();
   for (const cat of existingCategories) {
     await db.delete("categories", cat._id);

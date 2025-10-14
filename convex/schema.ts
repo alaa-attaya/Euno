@@ -7,22 +7,19 @@ export default defineSchema({
   categories: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
-    image: v.optional(v.string()),
+    iconSet: v.string(), // e.g., "MaterialIcons", "Entypo"
+    iconName: v.string(), // e.g., "apps", "rocket"
+    iconColor: v.string(),
   }).index("by_name", ["name"]),
 
-  // Static / seeded facts
-  seeded_facts: defineTable({
+  // Facts table
+  facts: defineTable({
     title: v.string(),
     content: v.string(),
     categoryId: v.id("categories"),
+    is_ai_generated: v.boolean(),
     image: v.optional(v.string()),
-  }).index("by_category", ["categoryId"]),
-
-  // AI-generated facts
-  ai_facts: defineTable({
-    title: v.string(),
-    content: v.string(),
-    categoryId: v.id("categories"),
-    image: v.optional(v.string()),
-  }).index("by_category", ["categoryId"]),
+  })
+    .index("by_category", ["categoryId"])
+    .index("by_category_and_ai", ["categoryId", "is_ai_generated"]),
 });

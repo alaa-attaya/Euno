@@ -14,7 +14,7 @@ type GenerateAIFactsResult = {
   category: string;
   requested: number;
   inserted: number;
-  factIds: Id<"ai_facts">[];
+  factIds: Id<"facts">[];
 };
 
 // --------------------------
@@ -56,8 +56,9 @@ export const generateAIFacts = action({
     const prompt = `
 Generate 20-30 short, unique, educational facts about "${category.name}".
 Return ONLY a valid JSON array of objects with:
-  "title": a catchy 3-8 word phrase (no punctuation)
-  "content": one clear fact sentence (max 50 words)
+  "title": a catchy 3-8 word phrase (no punctuation, only normal letters and numbers)
+  "content": one clear fact sentence (max 50 words, use only standard English letters, numbers, spaces, and basic punctuation like . ,)
+No special characters, emojis, or symbols. Only plain ASCII characters.
 No explanations or extra text.
 `;
 
@@ -87,7 +88,7 @@ No explanations or extra text.
       throw new Error("Gemini output invalid JSON");
     }
 
-    // 6️⃣ Filter duplicates
+    // 6️⃣ Filter duplicates (against only AI-generated facts)
     const existingFactsPage = await ctx.runQuery(
       api.functions.getAIFacts.getAIFacts,
       {
@@ -107,8 +108,8 @@ No explanations or extra text.
         )
     );
 
-    // 7️⃣ Insert facts (internal mutation)
-    const factIds: Id<"ai_facts">[] = [];
+    // 7️⃣ Insert facts using internal mutation
+    const factIds: Id<"facts">[] = [];
     for (const fact of uniqueFacts) {
       const id = await ctx.runMutation(
         internal.functions.insertAIFact.insertAIFact,

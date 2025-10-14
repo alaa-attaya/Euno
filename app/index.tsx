@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CardSkeletonPager from "./components/CardSkeleton";
-import CategorySkeleton from "./components/CategorySkeleton";
+import CategoryToolbar from "./components/CategoryToolbar";
 import TopBar from "./components/TopBar";
 export default function Index() {
   return (
@@ -11,7 +11,7 @@ export default function Index() {
         <CardSkeletonPager />
       </View>
 
-      <CategorySkeleton />
+      <CategoryToolbar />
     </SafeAreaView>
   );
 }
