@@ -18,14 +18,14 @@ export async function seedCategories({
       name: "General",
       description: "Miscellaneous fun facts",
       iconSet: "MaterialIcons",
-      iconName: "apps",
+      iconName: "category",
       iconColor: "#F6757A",
     },
     {
       name: "Science",
       description: "Fun science facts",
       iconSet: "Entypo",
-      iconName: "lab",
+      iconName: "science",
       iconColor: "#F9BD72",
     },
     {
