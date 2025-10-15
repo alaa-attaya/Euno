@@ -43,7 +43,7 @@ export async function seedCategories({
       iconColor: "#10B981",
     },
     {
-      name: "Technology",
+      name: "Tech",
       description: "Innovation facts",
       iconSet: "MaterialIcons",
       iconName: "memory",

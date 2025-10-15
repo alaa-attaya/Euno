@@ -1,4 +1,3 @@
-"use client";
 import MaskedView from "@react-native-masked-view/masked-view";
 import React from "react";
 import { Dimensions, Text, useColorScheme, View } from "react-native";

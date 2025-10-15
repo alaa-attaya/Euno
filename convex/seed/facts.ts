@@ -66,7 +66,7 @@ export async function seedFacts({
         content: "They digest tough plants efficiently.",
       },
     ],
-    Technology: [
+    Tech: [
       {
         title: "First Computer Bug",
         content: "A literal moth caused the first computer bug in 1947.",
