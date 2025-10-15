@@ -23,7 +23,7 @@ export default function CategoryToolbar() {
   // Fetch categories from Convex
   const categories = useQuery(api.functions.getCategories.getCategories);
 
-  // Add "All" at the beginning
+  // Always prepend "All" category
   const categoryList = [
     {
       _id: "all",
@@ -54,51 +54,66 @@ export default function CategoryToolbar() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ alignItems: "center" }}
       >
-        {categoryList.map((cat) => {
-          const IconComponent = IconMap[cat.iconSet];
-          const isSelected = selectedCategory === cat._id;
-
-          return (
-            <Pressable
-              key={cat._id}
-              onPress={() =>
-                setSelectedCategory(
-                  cat._id === "all" ? "all" : (cat._id as Id<"categories">)
-                )
-              }
-              style={{
-                width: 64,
-                height: 64,
-                marginRight: 8,
-                borderRadius: 32,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: isDark ? "#3A3A50" : "#F0F0F0",
-                borderWidth: isSelected ? 2 : 0,
-                borderColor: "#F6757A",
-              }}
-            >
-              {IconComponent && (
-                <IconComponent
-                  name={cat.iconName}
-                  size={24}
-                  color={cat.iconColor}
-                />
-              )}
-              <Text
+        {!categories
+          ? // Skeleton / loading state
+            Array.from({ length: 5 }).map((_, i) => (
+              <View
+                key={i}
                 style={{
-                  fontSize: 10,
-                  color: isDark ? "#fff" : "#000",
-                  marginTop: 2,
-                  textAlign: "center",
+                  width: 64,
+                  height: 64,
+                  borderRadius: 32,
+                  marginRight: 8,
+                  backgroundColor: isDark ? "#444" : "#DDD",
                 }}
-                numberOfLines={1}
-              >
-                {cat.name}
-              </Text>
-            </Pressable>
-          );
-        })}
+              />
+            ))
+          : // Actual categories
+            categoryList.map((cat) => {
+              const IconComponent = IconMap[cat.iconSet];
+              const isSelected = selectedCategory === cat._id;
+
+              return (
+                <Pressable
+                  key={cat._id}
+                  onPress={() =>
+                    setSelectedCategory(
+                      cat._id === "all" ? "all" : (cat._id as Id<"categories">)
+                    )
+                  }
+                  style={{
+                    width: 64,
+                    height: 64,
+                    marginRight: 8,
+                    borderRadius: 32,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: isDark ? "#3A3A50" : "#F0F0F0",
+                    borderWidth: isSelected ? 2 : 0,
+                    borderColor: "#F6757A",
+                  }}
+                >
+                  {IconComponent && (
+                    <IconComponent
+                      name={cat.iconName}
+                      size={24}
+                      color={cat.iconColor}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: isDark ? "#fff" : "#000",
+                      marginTop: 2,
+                      textAlign: "center",
+                    }}
+                    numberOfLines={1}
+                  >
+                    {cat.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
       </ScrollView>
     </View>
   );

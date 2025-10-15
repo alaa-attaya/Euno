@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { Dimensions, View, useColorScheme } from "react-native";
 import PagerView from "react-native-pager-view";
