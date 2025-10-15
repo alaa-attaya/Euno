@@ -22,23 +22,18 @@ export async function seedFacts({
       image?: string;
     }>
   > = {
-    General: [
-      {
-        title: "The Sun is Hot",
-        content: "The sun's surface temperature is around 5,500°C.",
-      },
-      {
-        title: "Water Freezes at 0°C",
-        content: "Pure water freezes at 0°C under normal atmospheric pressure.",
-      },
-    ],
-    Science: [
-      {
-        title: "Light Travels Fast",
-        content: "Light travels at 299,792,458 meters per second in a vacuum.",
-      },
-    ],
-    // Add more seeded facts per category as needed
+    // General: [
+    //   {
+    //     title: "The Sun is Hot",
+    //     content: "The sun's surface temperature is around 5,500C.",
+    //   },
+    // ],
+    // Science: [
+    //   {
+    //     title: "Light Travels Fast",
+    //     content: "Light travels at 299,792,458 meters per second in a vacuum.",
+    //   },
+    // ],
   };
 
   const inserted: Record<string, Id<"facts">> = {};

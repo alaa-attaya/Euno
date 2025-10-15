@@ -1,133 +1,150 @@
-import { v } from "convex/values";
-import { api, internal } from "../_generated/api";
-import { Id } from "../_generated/dataModel";
-import { action } from "../_generated/server";
+// functions/internal/generateAIFactsAction.ts
+import { GoogleGenAI } from "@google/genai";
+import { internal } from "../_generated/api";
+import { internalAction } from "../_generated/server";
 
-// --------------------------
-// Types
-// --------------------------
-type AIFact = { title: string; content: string };
-
-type GenerateAIFactsArgs = { categoryId: Id<"categories"> };
-
-type GenerateAIFactsResult = {
+export type AIFact = {
   category: string;
+  title: string;
+  content: string;
+  imageNeeded: boolean;
+};
+
+export type GenerateAIFactsResult = {
   requested: number;
   inserted: number;
-  factIds: Id<"facts">[];
+  factIds: string[];
+  categoriesProcessed: string[];
 };
 
 // --------------------------
-// Action
+// Internal action to generate AI facts
 // --------------------------
-export const generateAIFacts = action({
-  args: { categoryId: v.id("categories") },
+export const generateAIFactsAction = internalAction({
+  args: {},
+  handler: async (ctx, args): Promise<GenerateAIFactsResult> => {
+    console.log(`[AI FACTS] Action started at ${new Date().toISOString()}`);
 
-  handler: async (
-    ctx,
-    { categoryId }: GenerateAIFactsArgs
-  ): Promise<GenerateAIFactsResult> => {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
 
-    // 1️⃣ Fetch category info
-    const category = await ctx.runQuery(
-      api.functions.getCategoryById.getCategoryById,
-      { id: categoryId }
-    );
-    if (!category) throw new Error("Category not found");
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-    // 2️⃣ Rate-limit: 1 generation per 60s
-    const lastFactPage = await ctx.runQuery(
-      api.functions.getAIFacts.getAIFacts,
-      {
-        categoryId,
-        paginationOpts: { numItems: 1, cursor: null },
-      }
+    // --- Fetch categories using internal query ---
+    const categories = await ctx.runQuery(
+      internal.functions.getCategoriesInternal.getCategoriesInternal,
+      {}
     );
-    const lastFact = lastFactPage.page[0];
-    if (lastFact && Date.now() - lastFact._creationTime < 60_000) {
-      throw new Error(
-        "Please wait at least 60 seconds before regenerating facts."
-      );
-    }
+    if (!categories.length) throw new Error("No categories found");
 
-    // 3️⃣ Build prompt for AI
+    console.log(
+      `[AI FACTS] Categories: ${categories.map((c) => c.name).join(", ")}`
+    );
+
+    // --- Generate text facts ---
     const prompt = `
-Generate 20-30 short, unique, educational facts about "${category.name}".
-Return ONLY a valid JSON array of objects with:
-  "title": a catchy 3-8 word phrase (no punctuation, only normal letters and numbers)
-  "content": one clear fact sentence (max 50 words, use only standard English letters, numbers, spaces, and basic punctuation like . ,)
-No special characters, emojis, or symbols. Only plain ASCII characters.
-No explanations or extra text.
+Generate 3 unique educational facts for these categories: ${categories
+      .map((c) => c.name)
+      .join(", ")}.
+
+Each fact must be an object with exactly these fields:
+- category (string)
+- title (string)
+- content (string)
+- imageNeeded (boolean)
+
+Return ONLY a **pure JSON array**, nothing else. Do NOT include markdown, code fences, comments, or any extra text. Example:
+
+[
+  {
+    "category": "Science",
+    "title": "The Sun is a star",
+    "content": "The Sun is a medium-sized star in our galaxy.",
+    "imageNeeded": true
+  }
+]
 `;
 
-    // 4️⃣ Call Gemini API
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.8, maxOutputTokens: 3000 },
-        }),
-      }
-    );
+    console.log("[AI FACTS] Sending prompt to text generation model...");
+    const textResp = await ai.models.generateContent({
+      model: "imagen-3.0-generate",
+      contents: prompt,
+      config: { temperature: 0.8, maxOutputTokens: 5000 },
+    });
 
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const rawText = textResp.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
 
-    // 5️⃣ Parse JSON
-    let facts: AIFact[] = [];
-    try {
-      facts = JSON.parse(text);
-      if (!Array.isArray(facts)) throw new Error("Gemini response not array");
-    } catch (err) {
-      console.error("Gemini invalid JSON:", text);
-      throw new Error("Gemini output invalid JSON");
+    // --- Helper to clean any stray characters just in case ---
+    function extractJSON(text: string) {
+      const cleaned = text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .replace(/^\s+|\s+$/g, ""); // trim
+      return JSON.parse(cleaned);
     }
 
-    // 6️⃣ Filter duplicates (against only AI-generated facts)
-    const existingFactsPage = await ctx.runQuery(
-      api.functions.getAIFacts.getAIFacts,
-      {
-        categoryId,
-        paginationOpts: { numItems: 1000, cursor: null },
+    const facts: AIFact[] = extractJSON(rawText);
+    console.log(`[AI FACTS] Generated ${facts.length} facts`);
+
+    // --- Generate images in batches ---
+    const imageFacts = facts.filter((f) => f.imageNeeded);
+    console.log(`[AI FACTS] ${imageFacts.length} facts require images`);
+
+    const imageMap: Record<string, string> = {};
+    const BATCH_SIZE = 5;
+
+    for (let i = 0; i < imageFacts.length; i += BATCH_SIZE) {
+      const batch = imageFacts.slice(i, i + BATCH_SIZE);
+      console.log(
+        `[AI FACTS] Generating images for batch ${i / BATCH_SIZE + 1}`
+      );
+
+      const prompts = batch.map((f) => `${f.title}: ${f.content}`).join("\n\n");
+
+      const imageResp = await ai.models.generateImages({
+        model: "gemini-2.0-flash-preview-image-generation",
+        prompt: prompts,
+        config: { numberOfImages: batch.length },
+      });
+
+      batch.forEach((f, j) => {
+        const b64 = imageResp?.generatedImages?.[j]?.image?.imageBytes ?? "";
+        imageMap[`${f.category}|${f.title}`] = b64;
+      });
+
+      if (i + BATCH_SIZE < imageFacts.length) {
+        await new Promise((r) => setTimeout(r, 6000)); // respect rate limit
       }
-    );
-    const existingFacts: { title: string; content: string }[] =
-      existingFactsPage.page;
+    }
 
-    const uniqueFacts = facts.filter(
-      (f) =>
-        !existingFacts.some(
-          (ef) =>
-            ef.title.toLowerCase() === f.title.toLowerCase() ||
-            ef.content.toLowerCase() === f.content.toLowerCase()
-        )
-    );
+    // --- Insert facts using internal mutation ---
+    const factIds: string[] = [];
+    for (const fact of facts) {
+      const category = categories.find((c) => c.name === fact.category);
+      if (!category) continue;
 
-    // 7️⃣ Insert facts using internal mutation
-    const factIds: Id<"facts">[] = [];
-    for (const fact of uniqueFacts) {
+      const image = imageMap[`${fact.category}|${fact.title}`] ?? undefined;
+
       const id = await ctx.runMutation(
         internal.functions.insertAIFact.insertAIFact,
         {
-          categoryId,
-          title: fact.title.trim(),
-          content: fact.content.trim(),
+          categoryId: category._id,
+          title: fact.title,
+          content: fact.content,
+          image,
+          is_ai_generated: true,
         }
       );
+
       factIds.push(id);
     }
 
-    // 8️⃣ Return results
+    console.log(`[AI FACTS] Action finished at ${new Date().toISOString()}`);
     return {
-      category: category.name,
       requested: facts.length,
       inserted: factIds.length,
       factIds,
+      categoriesProcessed: categories.map((c) => c.name),
     };
   },
 });

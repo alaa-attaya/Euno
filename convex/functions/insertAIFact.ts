@@ -10,14 +10,18 @@ export const insertAIFact = internalMutation({
     title: v.string(),
     content: v.string(),
     image: v.optional(v.string()),
+    is_ai_generated: v.boolean(),
   },
-  handler: async ({ db }, { categoryId, title, content, image }) => {
+  handler: async (
+    { db },
+    { categoryId, title, content, image, is_ai_generated }
+  ) => {
     return await db.insert("facts", {
       categoryId,
       title,
       content,
-      is_ai_generated: true,
       image,
+      is_ai_generated,
     });
   },
 });
