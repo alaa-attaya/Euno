@@ -86,17 +86,23 @@ export async function seedCategories({
     },
   ];
 
-  // Delete any existing categories
-  const existingCategories = await db.query("categories").collect();
-  for (const cat of existingCategories) {
-    await db.delete("categories", cat._id);
-  }
-
-  // Insert fresh categories
   const inserted: Record<string, Id<"categories">> = {};
+
   for (const cat of categories) {
-    const id = await db.insert("categories", cat);
-    inserted[cat.name] = id;
+    // Check if category with same name already exists
+    const existing = await db
+      .query("categories")
+      .filter((c: any) => c.name === cat.name)
+      .first();
+
+    if (existing) {
+      // Use the existing category ID
+      inserted[cat.name] = existing._id;
+    } else {
+      // Insert new category
+      const id = await db.insert("categories", cat);
+      inserted[cat.name] = id;
+    }
   }
 
   return { inserted };
