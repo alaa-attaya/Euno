@@ -4,7 +4,7 @@
 
 ## Demo
 
-<table style="width: 50%; border-collapse: collapse;  border: 1px solid #ddd;">
+<table style="width: 70%; border-collapse: collapse;  border: 1px solid #ddd;">
 
   <thead>
     <tr>
@@ -17,13 +17,13 @@
   <tbody>
     <tr>
       <td style="border: 1px solid #ddd">
-        <img src="readme/Euno_dark.webp" alt="Dark Theme" height="400" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+        <img src="readme/Euno_dark.webp" alt="Dark Theme" height="600" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
       </td>
       <td style="border: 1px solid #ddd">
-        <img src="readme/Euno_light.webp" alt="Light Theme" height="400" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+        <img src="readme/Euno_light.webp" alt="Light Theme" height="600" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
       </td>
       <td style="border: 1px solid #ddd">
-        <img src="readme/Euno_demo.webp" alt="Demo Animation" height="400" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+        <img src="readme/Euno_demo.webp" alt="Demo Animation" height="600" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
       </td>
     </tr>
   </tbody>
