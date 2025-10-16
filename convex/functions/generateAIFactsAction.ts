@@ -82,33 +82,42 @@ export const generateAIFactsAction = internalAction({
 
     // 2️⃣ Build prompt
     const prompt = `
-Generate 40 unique educational facts in total, from these categories: ${categories
-      .map((c) => c.name)
-      .join(", ")}.
+      You are a JSON generator. Output only valid JSON — no explanations, no markdown, no comments, and no text before or after.
 
-Output format: a valid JSON array only. Each element is an object with keys:
-- "category" (string)
-- "title" (string)
-- "content" (string)
-- "imageNeeded" (boolean)
+      TASK:
+      Generate up to 40 short, unique, educational facts across the following categories:
+      ${categories.map((c) => c.name).join(", ")}.
 
-Do NOT include any explanations, text, or comments. Only output valid JSON.
-Example:
-[
-  {
-    "category": "Science",
-    "title": "Water Boils at 100C",
-    "content": "Water boils at 100 degrees Celsius under normal pressure.",
-    "imageNeeded": false
-  }
-]
-`;
+      Each fact must be an object with exactly these keys:
+      - "category": string (must be one of the listed categories)
+      - "title": string (short, catchy, ≤60 characters, avoid quotes or apostrophes)
+      - "content": string (1-3 sentences, informative and factual, up to 350 characters)
+      - "imageNeeded": boolean (true if a simple illustration would help visualize the fact)
+
+      STRICT RULES:
+      - Output ONLY a valid JSON array.
+      - No markdown, code fences, or text outside the JSON.
+      - Do not use single quotes inside strings.
+      - If you cannot fit all 40 items, return fewer — but keep valid JSON.
+      - Every array must start with "[" and end with "]".
+      - Validate your JSON structure before sending.
+
+      EXAMPLE OUTPUT FORMAT:
+      [
+        {
+          "category": "Science",
+          "title": "Water Boils at 100°C",
+          "content": "Under normal atmospheric pressure, water transitions from liquid to gas at 100 degrees Celsius, demonstrating a key concept in thermodynamics.",
+          "imageNeeded": false
+        }
+      ]
+      `;
 
     console.log("[AI FACTS] Sending prompt to Gemini...");
     const textResp = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
-      config: { temperature: 0.8, maxOutputTokens: 5000 },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { temperature: 0.8, maxOutputTokens: 20000 },
     });
 
     const rawText = textResp.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
