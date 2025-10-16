@@ -23,7 +23,6 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
   return result;
 }
 
-// Browser-compatible base64 → Uint8Array
 function base64ToUint8Array(base64: string) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -31,19 +30,15 @@ function base64ToUint8Array(base64: string) {
   return bytes;
 }
 
-// Robust JSON parser for Gemini output
 function parseJsonSafe(raw: string): AIFact[] {
-  // Remove code fences
   let cleaned = raw
     .replace(/```(json)?/gi, "")
     .replace(/```/g, "")
     .trim();
-  // Attempt normal parse
   try {
     const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed)) return parsed;
   } catch {}
-  // Fallback: match first JSON array block
   const match = cleaned.match(/\[.*\]/s);
   if (match) {
     try {
@@ -51,16 +46,15 @@ function parseJsonSafe(raw: string): AIFact[] {
       if (Array.isArray(parsed)) return parsed;
     } catch {}
   }
-  console.warn("[AI FACTS] Failed to parse JSON:", cleaned.slice(0, 300));
+  console.warn("[AI FACTS] ❌ Failed to parse JSON:", cleaned.slice(0, 300));
   return [];
 }
 
-// Enforce AIFact schema
 function sanitizeFacts(facts: any[]): AIFact[] {
   return facts.map((f) => ({
-    category: typeof f.category === "string" ? f.category : "General",
-    title: typeof f.title === "string" ? f.title : "Untitled Fact",
-    content: typeof f.content === "string" ? f.content : "",
+    category: typeof f.category === "string" ? f.category.trim() : "General",
+    title: typeof f.title === "string" ? f.title.trim() : "Untitled Fact",
+    content: typeof f.content === "string" ? f.content.trim() : "",
     imageNeeded: typeof f.imageNeeded === "boolean" ? f.imageNeeded : false,
   }));
 }
@@ -68,7 +62,7 @@ function sanitizeFacts(facts: any[]): AIFact[] {
 export const generateAIFactsAction = internalAction({
   args: {},
   handler: async (ctx, args): Promise<GenerateAIFactsResult> => {
-    console.log(`[AI FACTS] 🚀 Action started at ${new Date().toISOString()}`);
+    console.log(`[AI FACTS] 🚀 Started at ${new Date().toISOString()}`);
 
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
@@ -86,7 +80,7 @@ export const generateAIFactsAction = internalAction({
       `[AI FACTS] Categories: ${categories.map((c) => c.name).join(", ")}`
     );
 
-    // 2️⃣ Prepare strict JSON prompt
+    // 2️⃣ Build prompt
     const prompt = `
 Generate 30 unique educational facts in total, from these categories: ${categories
       .map((c) => c.name)
@@ -118,39 +112,50 @@ Example:
     });
 
     const rawText = textResp.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
-    console.log(
-      "[AI FACTS] Raw text output (truncated):",
-      rawText.slice(0, 300)
-    );
+    console.log("[AI FACTS] Raw output:", rawText.slice(0, 300));
 
-    let facts = parseJsonSafe(rawText);
-    facts = sanitizeFacts(facts);
+    let facts = sanitizeFacts(parseJsonSafe(rawText));
     console.log(`[AI FACTS] Parsed ${facts.length} facts`);
 
     const imageFacts: AIFact[] = [];
     const nonImageFacts: AIFact[] = [];
 
     for (const fact of facts) {
-      const category = categories.find((c) => c.name === fact.category);
+      const normalizedTitle = fact.title.toLowerCase();
+      const normalizedContent = fact.content.toLowerCase();
+      const category = categories.find(
+        (c) => c.name.toLowerCase() === fact.category.toLowerCase()
+      );
       if (!category) continue;
 
       const existing = await ctx.runQuery(
-        internal.functions.getFactByTitleAndCategory.getFactByTitleAndCategory,
-        { title: fact.title, categoryId: category._id }
+        internal.functions.getFactByTitleOrContentAndCategory
+          .getFactByTitleOrContentAndCategory,
+        {
+          title: normalizedTitle,
+          content: normalizedContent,
+          categoryId: category._id,
+        }
       );
-      if (existing) continue;
+
+      if (existing) {
+        console.log(`[AI FACTS] ⚠️ Skipped duplicate: ${fact.title}`);
+        continue;
+      }
 
       (fact.imageNeeded ? imageFacts : nonImageFacts).push(fact);
     }
 
-    console.log(`[AI FACTS] ${nonImageFacts.length} non-image facts`);
-    console.log(`[AI FACTS] ${imageFacts.length} image facts`);
+    console.log(`[AI FACTS] Non-image: ${nonImageFacts.length}`);
+    console.log(`[AI FACTS] Image-needed: ${imageFacts.length}`);
 
     const factIds: string[] = [];
 
-    // Insert non-image facts
+    // 3️⃣ Insert text-only facts
     for (const fact of nonImageFacts) {
-      const category = categories.find((c) => c.name === fact.category);
+      const category = categories.find(
+        (c) => c.name.toLowerCase() === fact.category.toLowerCase()
+      );
       if (!category) continue;
 
       const id = await ctx.runMutation(
@@ -163,30 +168,34 @@ Example:
           is_ai_generated: true,
         }
       );
-      console.log(`[AI FACTS] ✅ Inserted text-only fact: ${fact.title}`);
+      console.log(`[AI FACTS] ✅ Inserted: ${fact.title}`);
       factIds.push(id);
     }
 
-    // Generate and store images
+    // 4️⃣ Generate and insert image facts
     const IMAGE_RATE_LIMIT = 8;
     const IMAGE_DELAY = 6000;
     const imageChunks = chunkArray(imageFacts, IMAGE_RATE_LIMIT);
 
     for (let i = 0; i < imageChunks.length; i++) {
       const chunk = imageChunks[i];
-      console.log(`[AI FACTS] ⚡ Chunk ${i + 1}/${imageChunks.length}`);
+      console.log(`[AI FACTS] ⚡ Image chunk ${i + 1}/${imageChunks.length}`);
 
       for (const f of chunk) {
-        console.log(`[AI FACTS] Generating image for "${f.title}"...`);
+        console.log(`[AI FACTS] 🖼️ Generating for: "${f.title}"`);
         try {
           const imageResp = await ai.models.generateContent({
             model: "gemini-2.0-flash-preview-image-generation",
-            contents: `Generate a high-quality educational illustration for this fact: ${f.title}: ${f.content}`,
+            contents: `
+                        Generate a small, clear, educational illustration for this fact.
+                        Keep it visually simple and balanced — suitable for a fact card around 300x450px (portrait 2:3).
+                        Avoid text, labels, or busy backgrounds.
+                        Fact:
+                        Title: ${f.title}
+                        Content: ${f.content}
+                        `,
             config: {
               responseModalities: ["IMAGE", "TEXT"],
-              imageConfig: {
-                aspectRatio: "2:3",
-              },
             },
           });
 
@@ -196,7 +205,7 @@ Example:
             );
           const b64 = inlineDataPart?.inlineData?.data ?? "";
           if (!b64) {
-            console.warn(`[AI FACTS] ⚠️ No image returned for "${f.title}"`);
+            console.warn(`[AI FACTS] ⚠️ No image for "${f.title}"`);
             continue;
           }
 
@@ -206,10 +215,9 @@ Example:
           const storageId = await ctx.storage.store(blob);
           const imageUrl = await ctx.storage.getUrl(storageId);
 
-          console.log(`[AI FACTS] 📦 Stored in Convex (id=${storageId})`);
-          console.log(`[AI FACTS] 🌐 Image URL: ${imageUrl}`);
-
-          const category = categories.find((c) => c.name === f.category);
+          const category = categories.find(
+            (c) => c.name.toLowerCase() === f.category.toLowerCase()
+          );
           if (!category) continue;
 
           const id = await ctx.runMutation(
@@ -222,21 +230,21 @@ Example:
               is_ai_generated: true,
             }
           );
-          console.log(`[AI FACTS] ✅ Inserted fact with image: ${f.title}`);
+          console.log(`[AI FACTS] ✅ Inserted with image: ${f.title}`);
           factIds.push(id);
         } catch (err) {
-          console.error(`[AI FACTS] ❌ Error processing "${f.title}"`, err);
+          console.error(`[AI FACTS] ❌ Error with "${f.title}"`, err);
         }
         await new Promise((r) => setTimeout(r, IMAGE_DELAY));
       }
 
       if (i + 1 < imageChunks.length) {
-        console.log(`[AI FACTS] Waiting 60s before next chunk...`);
+        console.log(`[AI FACTS] ⏳ Waiting 60s before next chunk...`);
         await new Promise((r) => setTimeout(r, 60_000));
       }
     }
 
-    console.log(`[AI FACTS] 🎯 Done inserting ${factIds.length} facts total`);
+    console.log(`[AI FACTS] 🎯 Done inserting ${factIds.length} total`);
     return {
       requested: facts.length,
       inserted: factIds.length,
