@@ -4,13 +4,34 @@
 
 ## Demo
 
-| Light Theme                            | Dark Theme                           |
-| -------------------------------------- | ------------------------------------ |
-| ![Light Theme](readme/Euno_light.webp) | ![Dark Theme](readme/Euno_dark.webp) |
+<table style="width: 50%; border-collapse: collapse;  border: 1px solid #ddd;">
+
+  <thead>
+    <tr>
+      <th style="border: 1px solid #ddd; text-align: center; padding: 8px;">Dark Theme</th>
+      <th style="border: 1px solid #ddd; text-align: center; padding: 8px;">Light Theme</th>
+      <th style="border: 1px solid #ddd; text-align: center; padding: 8px;">Demo Animation</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <tr>
+      <td style="border: 1px solid #ddd">
+        <img src="readme/Euno_dark.webp" alt="Dark Theme" height="400" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+      </td>
+      <td style="border: 1px solid #ddd">
+        <img src="readme/Euno_light.webp" alt="Light Theme" height="400" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+      </td>
+      <td style="border: 1px solid #ddd">
+        <img src="readme/Euno_demo.webp" alt="Demo Animation" height="400" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ## Overview
 
-Euno is a hobby project showcasing bite-sized educational facts generated using AI.  
+Euno showcases bite-sized educational facts generated using AI.  
 Facts are automatically created via **Convex cron jobs** and the **Google Gemini API**, and may include simple illustrations.
 
 **Key Features:**
