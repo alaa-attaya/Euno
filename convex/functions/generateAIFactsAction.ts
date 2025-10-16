@@ -82,7 +82,7 @@ export const generateAIFactsAction = internalAction({
 
     // 2️⃣ Build prompt
     const prompt = `
-Generate 30 unique educational facts in total, from these categories: ${categories
+Generate 40 unique educational facts in total, from these categories: ${categories
       .map((c) => c.name)
       .join(", ")}.
 
@@ -187,13 +187,17 @@ Example:
           const imageResp = await ai.models.generateContent({
             model: "gemini-2.0-flash-preview-image-generation",
             contents: `
-                        Generate a small, clear, educational illustration for this fact.
-                        Keep it visually simple and balanced — suitable for a fact card around 300x450px (portrait 2:3).
-                        Avoid text, labels, or busy backgrounds.
-                        Fact:
-                        Title: ${f.title}
-                        Content: ${f.content}
-                        `,
+                      Generate a small, clear, educational illustration for this fact.
+                      - Avoid any text, labels, or captions.
+                      - Keep the illustration simple and visually balanced.
+                      - Target square format, around 300x300 to 300x400px.
+                      - Avoid busy backgrounds; no text or logos.
+                      - Generate at medium quality.
+                      - Keep the image under ~400KB.
+                      Fact:
+                      Title: ${f.title}
+                      Content: ${f.content}
+                      `,
             config: {
               responseModalities: ["IMAGE", "TEXT"],
             },
