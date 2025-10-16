@@ -66,7 +66,7 @@ export default function DeckSwiper() {
         {facts.map((fact) => {
           const hasImage = Boolean(fact.image);
           const CARD_HEIGHT = SCREEN_HEIGHT * 0.6;
-          const IMAGE_HEIGHT = CARD_HEIGHT * 0.7;
+          const IMAGE_HEIGHT = CARD_HEIGHT * 0.6;
 
           return (
             <View

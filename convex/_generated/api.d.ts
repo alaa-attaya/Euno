@@ -13,13 +13,14 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
-import type * as crons from ../crons.jsjs";
-import type * as functions_generateAIFact from "../functions/generateAIFact.js";
+import type * as crons from "../crons.js";
+import type * as functions_generateAIFactsAction from "../functions/generateAIFactsAction.js";
 import type * as functions_getAIFacts from "../functions/getAIFacts.js";
 import type * as functions_getAllFacts from "../functions/getAllFacts.js";
 import type * as functions_getCategories from "../functions/getCategories.js";
 import type * as functions_getCategoriesInternal from "../functions/getCategoriesInternal.js";
 import type * as functions_getCategoryById from "../functions/getCategoryById.js";
+import type * as functions_getFactByTitleAndCategory from "../functions/getFactByTitleAndCategory.js";
 import type * as functions_getFactsByCategory from "../functions/getFactsByCategory.js";
 import type * as functions_insertAIFact from "../functions/insertAIFact.js";
 import type * as seed_categories from "../seed/categories.js";
@@ -36,12 +37,13 @@ import type * as seed_seed from "../seed/seed.js";
  */
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
-  "functions/generateAIFact": typeof functions_generateAIFact;
+  "functions/generateAIFactsAction": typeof functions_generateAIFactsAction;
   "functions/getAIFacts": typeof functions_getAIFacts;
   "functions/getAllFacts": typeof functions_getAllFacts;
   "functions/getCategories": typeof functions_getCategories;
   "functions/getCategoriesInternal": typeof functions_getCategoriesInternal;
   "functions/getCategoryById": typeof functions_getCategoryById;
+  "functions/getFactByTitleAndCategory": typeof functions_getFactByTitleAndCategory;
   "functions/getFactsByCategory": typeof functions_getFactsByCategory;
   "functions/insertAIFact": typeof functions_insertAIFact;
   "seed/categories": typeof seed_categories;

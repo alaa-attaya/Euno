@@ -7,8 +7,8 @@ const crons = cronJobs();
 // Run every hour
 crons.interval(
   "generate_ai_facts_hourly",
-  { hours: 1 },
-  internal.functions.generateAIFact.generateAIFactsAction
+  { hours: 6 },
+  internal.functions.generateAIFactsAction.generateAIFactsAction
 );
 
 export default crons;
