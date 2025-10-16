@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { useFactsStore } from "@/store/useFactsStore";
 import { usePaginatedQuery } from "convex/react";
-import React from "react";
+import React, { useState } from "react";
 import { Dimensions, Image, Text, useColorScheme, View } from "react-native";
 import PagerView, {
   PagerViewOnPageSelectedEvent,
@@ -14,7 +14,10 @@ export default function DeckSwiper() {
   const { selectedCategory, setPageIndex, getPageIndex } = useFactsStore();
   const isDark = useColorScheme() === "dark";
 
-  // Paginated queries
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>(
+    {}
+  );
+
   const {
     results: allFacts,
     status: allFactsStatus,
@@ -43,14 +46,35 @@ export default function DeckSwiper() {
 
   if (!facts || facts.length === 0) return <CardSkeletonPager />;
 
+  // Prefetch images safely
+  const prefetchImages = (startIdx: number, count: number) => {
+    for (let i = startIdx; i < Math.min(facts.length, startIdx + count); i++) {
+      const fact = facts[i];
+      if (fact.image && loadingImages[fact._id] === undefined) {
+        setLoadingImages((prev) => ({ ...prev, [fact._id]: true }));
+        Image.prefetch(fact.image)
+          .then(() => {
+            setLoadingImages((prev) => ({ ...prev, [fact._id]: false }));
+          })
+          .catch((err) => console.warn("Prefetch failed:", fact.image, err));
+      }
+    }
+  };
+
   const handlePageSelected = (e: PagerViewOnPageSelectedEvent) => {
     const idx = e.nativeEvent.position;
     setPageIndex(selectedCategory, idx);
 
-    // Trigger pagination when user reaches last card
+    // prefetch next 3 images
+    prefetchImages(idx + 1, 3);
+
     if (idx >= facts.length - 1 && status === "CanLoadMore" && loadMore) {
-      loadMore(10); // fetch next 10 items
+      loadMore(10);
     }
+  };
+
+  const handleImageLoad = (id: string) => {
+    setLoadingImages((prev) => ({ ...prev, [id]: false }));
   };
 
   return (
@@ -67,6 +91,7 @@ export default function DeckSwiper() {
           const hasImage = Boolean(fact.image);
           const CARD_HEIGHT = SCREEN_HEIGHT * 0.6;
           const IMAGE_HEIGHT = CARD_HEIGHT * 0.6;
+          const isLoading = loadingImages[fact._id] ?? true;
 
           return (
             <View
@@ -83,15 +108,23 @@ export default function DeckSwiper() {
               {hasImage && (
                 <Image
                   source={{ uri: fact.image }}
+                  className={isLoading ? "animate-pulse" : ""}
                   style={{
                     width: "100%",
                     height: IMAGE_HEIGHT,
                     borderRadius: 16,
                     marginBottom: 24,
                     resizeMode: "cover",
+                    backgroundColor: isLoading
+                      ? isDark
+                        ? "#444"
+                        : "#DDD"
+                      : "transparent",
                   }}
+                  onLoad={() => handleImageLoad(fact._id)}
                 />
               )}
+
               <View
                 style={{
                   flex: 1,
