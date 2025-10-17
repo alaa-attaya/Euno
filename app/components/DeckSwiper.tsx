@@ -56,9 +56,9 @@ export default function DeckSwiper() {
   const prefetchImages = (startIdx: number, count: number) => {
     for (let i = startIdx; i < Math.min(facts.length, startIdx + count); i++) {
       const fact = facts[i];
-      if (fact.image && loadingImages[fact._id] === undefined) {
+      if (fact.imageUrl && loadingImages[fact._id] === undefined) {
         setLoadingImages((prev) => ({ ...prev, [fact._id]: true }));
-        Image.prefetch(fact.image)
+        Image.prefetch(fact.imageUrl)
           .then(() =>
             setLoadingImages((prev) => ({ ...prev, [fact._id]: false }))
           )
@@ -93,7 +93,7 @@ export default function DeckSwiper() {
         overScrollMode="never"
       >
         {facts.map((fact) => {
-          const hasImage = Boolean(fact.image);
+          const hasImage = Boolean(fact.imageUrl);
           const CARD_HEIGHT = SCREEN_HEIGHT * 0.6;
           const IMAGE_HEIGHT = CARD_HEIGHT * 0.5;
           const isLoading = loadingImages[fact._id] ?? true;
@@ -121,7 +121,7 @@ export default function DeckSwiper() {
               >
                 {hasImage && (
                   <Image
-                    source={{ uri: fact.image }}
+                    source={fact.imageUrl ? { uri: fact.imageUrl } : undefined}
                     className={isLoading ? "animate-pulse" : ""}
                     style={{
                       width: "100%",
