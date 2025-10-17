@@ -1,76 +1,68 @@
-// seed/facts.ts
+import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
+import { internalMutation } from "../_generated/server";
 
-export interface SeedFactsArgs {
-  db: any;
-  categoryIds: Record<string, Id<"categories">>;
-}
+export const insertOrUpdateFact = internalMutation({
+  args: {
+    title: v.string(),
+    content: v.string(),
+    categoryId: v.id("categories"),
+    image: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
+    embedding: v.array(v.float64()),
+  },
+  handler: async (
+    ctx,
+    { title, content, categoryId, image, storageId, embedding }
+  ) => {
+    const existingFact = await ctx.db
+      .query("facts")
+      .withIndex("by_category", (q) => q.eq("categoryId", categoryId))
+      .filter((q) => q.eq(q.field("title"), title))
+      .first();
 
-export interface SeedFactsResult {
-  inserted: Record<string, Id<"facts">>;
-}
+    let factId: Id<"facts">;
+    let inserted = false;
 
-export async function seedFacts({
-  db,
-  categoryIds,
-}: SeedFactsArgs): Promise<SeedFactsResult> {
-  const factsByCategory: Record<
-    string,
-    Array<{
-      title: string;
-      content: string;
-      image?: string;
-      storageId?: Id<"_storage">;
-    }>
-  > = {
-    // Example:
-    // General: [
-    //   {
-    //     title: "The Sun is Hot",
-    //     content: "The sun's surface temperature is around 5,500C.",
-    //   },
-    // ],
-  };
-
-  const inserted: Record<string, Id<"facts">> = {};
-
-  for (const [categoryName, facts] of Object.entries(factsByCategory)) {
-    const categoryId = categoryIds[categoryName];
-    if (!categoryId) continue;
-
-    for (const fact of facts) {
-      // 1️⃣ Check if the fact already exists in this category by title
-      const existingFact = await db
-        .query("facts")
-        .filter(
-          (f: any) =>
-            f.categoryId === categoryId &&
-            f.title.toLowerCase().trim() === fact.title.toLowerCase().trim()
-        )
-        .first();
-
-      if (existingFact) {
-        inserted[fact.title] = existingFact._id;
-        continue;
+    if (existingFact) {
+      if (existingFact.content !== content) {
+        await ctx.db.patch(existingFact._id, { content });
       }
-
-      // 2️⃣ Prepare fields safely
-      const sanitizedImage = fact.image?.trim() || undefined;
-      const sanitizedStorageId = fact.storageId ?? undefined;
-
-      // 3️⃣ Insert new fact
-      const id = await db.insert("facts", {
-        title: fact.title.trim(),
-        content: fact.content.trim(),
+      factId = existingFact._id;
+    } else {
+      factId = await ctx.db.insert("facts", {
+        title,
+        content,
         categoryId,
         is_ai_generated: false,
-        image: sanitizedImage,
-        storageId: sanitizedStorageId,
+        image: image ?? undefined,
+        storageId: storageId ?? undefined,
+      });
+      inserted = true;
+    }
+
+    // Upsert embedding
+    const existingEmbedding = await ctx.db
+      .query("embeddings_1536")
+      .withIndex("by_fact", (q) => q.eq("factId", factId))
+      .first();
+
+    if (existingEmbedding) {
+      await ctx.db.patch(existingEmbedding._id, { embedding });
+    } else {
+      const embeddingId = await ctx.db.insert("embeddings_1536", {
+        embedding,
+        model: "gemini-embedding-001",
+        factId,
+        categoryId,
       });
 
-      inserted[fact.title] = id;
+      await ctx.db.patch(factId, {
+        embeddingId,
+        embeddingModel: "gemini-embedding-001",
+      });
     }
-  }
 
-  return { inserted };
-}
+    return { factId, inserted }; // ✅ now we return whether it was newly inserted
+  },
+});
