@@ -40,13 +40,13 @@ Facts are automatically created via **Convex cron jobs** and the **Google Gemini
 - Swipe through scrollable fact cards
 - Supports both light and dark themes
 - Facts are updated automatically via background cron jobs
-- Images are simple, visually balanced, and contain no text or logos
 
 ## How It Works
 
 1. **Fact Generation:** Convex cron jobs periodically trigger AI to generate facts in JSON format.
 2. **Image Generation:** Facts marked as `imageNeeded` receive small illustrations stored in Convex.
-3. **Frontend:** React Native + Expo renders the app and the scrollable fact cards.
+3. **Embeddings:** Each fact is embedded using `Google Gemini embeddings` for semantic search and similarity.
+4. **Frontend:** React Native + Expo renders the app and the scrollable fact cards.
 
 ## Tech Stack
 
