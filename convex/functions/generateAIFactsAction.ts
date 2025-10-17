@@ -130,8 +130,6 @@ export const generateAIFactsAction = internalAction({
     const nonImageFacts: AIFact[] = [];
 
     for (const fact of facts) {
-      const normalizedTitle = fact.title.toLowerCase();
-      const normalizedContent = fact.content.toLowerCase();
       const category = categories.find(
         (c) => c.name.toLowerCase() === fact.category.toLowerCase()
       );
@@ -141,8 +139,8 @@ export const generateAIFactsAction = internalAction({
         internal.functions.getFactByTitleOrContentAndCategory
           .getFactByTitleOrContentAndCategory,
         {
-          title: normalizedTitle,
-          content: normalizedContent,
+          title: fact.title,
+          content: fact.content,
           categoryId: category._id,
         }
       );

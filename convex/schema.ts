@@ -21,5 +21,9 @@ export default defineSchema({
     image: v.optional(v.string()),
   })
     .index("by_category", ["categoryId"])
-    .index("by_category_and_ai", ["categoryId", "is_ai_generated"]),
+    .index("by_category_and_ai", ["categoryId", "is_ai_generated"])
+    .searchIndex("search_content", {
+      searchField: "content",
+      filterFields: ["categoryId"],
+    }),
 });
