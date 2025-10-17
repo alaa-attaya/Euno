@@ -84,7 +84,7 @@ export const generateAIFactsAction = internalAction({
       You are a JSON generator. Output only valid JSON — no explanations, no markdown, no comments, and no text before or after.
 
       TASK:
-      Generate exactly 2 UNIQUE, surprising, and lesser-known educational facts across the following categories:
+      Generate exactly 30 UNIQUE, surprising, and lesser-known educational facts across the following categories:
       ${categories.map((c) => c.name).join(", ")}.
 
       UNIQUENESS REQUIREMENTS:
