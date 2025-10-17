@@ -23,6 +23,7 @@ import type * as functions_getCategoryById from "../functions/getCategoryById.js
 import type * as functions_getFactByTitleOrContentAndCategory from "../functions/getFactByTitleOrContentAndCategory.js";
 import type * as functions_getFactsByCategory from "../functions/getFactsByCategory.js";
 import type * as functions_insertAIFact from "../functions/insertAIFact.js";
+import type * as functions_migration from "../functions/migration.js";
 import type * as seed_categories from "../seed/categories.js";
 import type * as seed_facts from "../seed/facts.js";
 import type * as seed_seed from "../seed/seed.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   "functions/getFactByTitleOrContentAndCategory": typeof functions_getFactByTitleOrContentAndCategory;
   "functions/getFactsByCategory": typeof functions_getFactsByCategory;
   "functions/insertAIFact": typeof functions_insertAIFact;
+  "functions/migration": typeof functions_migration;
   "seed/categories": typeof seed_categories;
   "seed/facts": typeof seed_facts;
   "seed/seed": typeof seed_seed;

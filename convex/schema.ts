@@ -19,6 +19,7 @@ export default defineSchema({
     categoryId: v.id("categories"),
     is_ai_generated: v.boolean(),
     image: v.optional(v.string()),
+    storageId: v.optional(v.string()),
   })
     .index("by_category", ["categoryId"])
     .index("by_category_and_ai", ["categoryId", "is_ai_generated"])
