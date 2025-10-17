@@ -20,13 +20,10 @@ import type * as functions_getAllFacts from "../functions/getAllFacts.js";
 import type * as functions_getCategories from "../functions/getCategories.js";
 import type * as functions_getCategoriesInternal from "../functions/getCategoriesInternal.js";
 import type * as functions_getCategoryById from "../functions/getCategoryById.js";
-import type * as functions_getFactByTitleOrContentAndCategory from "../functions/getFactByTitleOrContentAndCategory.js";
 import type * as functions_getFactsByCategory from "../functions/getFactsByCategory.js";
-import type * as functions_insertAIFact from "../functions/insertAIFact.js";
+import type * as functions_insertOrUpdateAIFact from "../functions/insertOrUpdateAIFact.js";
 import type * as seed_categories from "../seed/categories.js";
 import type * as seed_facts from "../seed/facts.js";
-import type * as seed_fillMissingEmbeddings from "../seed/fillMissingEmbeddings.js";
-import type * as seed_getMissingEmbeddingsFacts from "../seed/getMissingEmbeddingsFacts.js";
 import type * as seed_seedFacts from "../seed/seedFacts.js";
 
 /**
@@ -45,13 +42,10 @@ declare const fullApi: ApiFromModules<{
   "functions/getCategories": typeof functions_getCategories;
   "functions/getCategoriesInternal": typeof functions_getCategoriesInternal;
   "functions/getCategoryById": typeof functions_getCategoryById;
-  "functions/getFactByTitleOrContentAndCategory": typeof functions_getFactByTitleOrContentAndCategory;
   "functions/getFactsByCategory": typeof functions_getFactsByCategory;
-  "functions/insertAIFact": typeof functions_insertAIFact;
+  "functions/insertOrUpdateAIFact": typeof functions_insertOrUpdateAIFact;
   "seed/categories": typeof seed_categories;
   "seed/facts": typeof seed_facts;
-  "seed/fillMissingEmbeddings": typeof seed_fillMissingEmbeddings;
-  "seed/getMissingEmbeddingsFacts": typeof seed_getMissingEmbeddingsFacts;
   "seed/seedFacts": typeof seed_seedFacts;
 }>;
 export declare const api: FilterApi<

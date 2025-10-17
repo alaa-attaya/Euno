@@ -18,8 +18,9 @@ export type GenerateAIFactsResult = {
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += size)
+  for (let i = 0; i < arr.length; i += size) {
     result.push(arr.slice(i, i + size));
+  }
   return result;
 }
 
@@ -66,7 +67,6 @@ export const generateAIFactsAction = internalAction({
 
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY");
-
     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
     // 1️⃣ Fetch categories
@@ -75,7 +75,6 @@ export const generateAIFactsAction = internalAction({
       {}
     );
     if (!categories.length) throw new Error("No categories found");
-
     console.log(
       `[AI FACTS] Categories: ${categories.map((c) => c.name).join(", ")}`
     );
@@ -85,9 +84,16 @@ export const generateAIFactsAction = internalAction({
       You are a JSON generator. Output only valid JSON — no explanations, no markdown, no comments, and no text before or after.
 
       TASK:
-      Generate up to 40 short, unique, educational facts across the following categories:
+      Generate exactly 2 UNIQUE, surprising, and lesser-known educational facts across the following categories:
       ${categories.map((c) => c.name).join(", ")}.
 
+      UNIQUENESS REQUIREMENTS:
+      - Avoid common knowledge or obvious facts
+      - Focus on surprising, counterintuitive, or little-known information
+      - Each fact should teach something unexpected
+      - Vary the style and approach for each fact
+      - Include specific numbers, dates, or examples when possible
+      
       Each fact must be an object with exactly these keys:
       - "category": string (must be one of the listed categories)
       - "title": string (short, catchy, ≤60 characters, avoid quotes or apostrophes)
@@ -113,64 +119,60 @@ export const generateAIFactsAction = internalAction({
     const rawText = textResp.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
     console.log("[AI FACTS] Raw output:", rawText.slice(0, 300));
 
-    let facts = sanitizeFacts(parseJsonSafe(rawText));
+    const facts = sanitizeFacts(parseJsonSafe(rawText));
     console.log(`[AI FACTS] Parsed ${facts.length} facts`);
 
     const imageFacts: AIFact[] = [];
-    const nonImageFacts: AIFact[] = [];
+    const factIds: string[] = [];
 
+    // 3️⃣ Process facts
     for (const fact of facts) {
+      // Lookup category
       const category = categories.find(
         (c) => c.name.toLowerCase() === fact.category.toLowerCase()
       );
-      if (!category) continue;
-
-      const existing = await ctx.runQuery(
-        internal.functions.getFactByTitleOrContentAndCategory
-          .getFactByTitleOrContentAndCategory,
-        {
-          title: fact.title,
-          content: fact.content,
-          categoryId: category._id,
-        }
-      );
-
-      if (existing) {
-        console.log(`[AI FACTS] ⚠️ Skipped duplicate: ${fact.title}`);
+      if (!category) {
+        console.warn(
+          `[AI FACTS] ⚠️ Skipped fact due to missing category: ${fact.title}`
+        );
         continue;
       }
 
-      (fact.imageNeeded ? imageFacts : nonImageFacts).push(fact);
+      if (fact.imageNeeded) {
+        imageFacts.push(fact);
+        continue;
+      }
+
+      // Text-only fact insertion
+      try {
+        const embedding = await ctx.runAction(
+          internal.functions.embedGemini.embedGeminiText,
+          { text: fact.title + "\n" + fact.content }
+        );
+
+        const { factId } = await ctx.runMutation(
+          internal.functions.insertOrUpdateAIFact.insertOrUpdateAIFact,
+          {
+            title: fact.title,
+            content: fact.content,
+            categoryId: category._id,
+            image: "",
+            storageId: undefined,
+            embedding,
+            is_ai_generated: true,
+          }
+        );
+        console.log(`[AI FACTS] ✅ Inserted text-only: ${fact.title}`);
+        factIds.push(factId);
+      } catch (err) {
+        console.warn(
+          `[AI FACTS] ⚠️ Skipped text-only fact due to embed error: ${fact.title}`,
+          err
+        );
+      }
     }
 
-    console.log(`[AI FACTS] Non-image: ${nonImageFacts.length}`);
-    console.log(`[AI FACTS] Image-needed: ${imageFacts.length}`);
-
-    const factIds: string[] = [];
-
-    // 3️⃣ Insert text-only facts
-    for (const fact of nonImageFacts) {
-      const category = categories.find(
-        (c) => c.name.toLowerCase() === fact.category.toLowerCase()
-      );
-      if (!category) continue;
-
-      const id = await ctx.runMutation(
-        internal.functions.insertAIFact.insertAIFact,
-        {
-          categoryId: category._id,
-          title: fact.title,
-          content: fact.content,
-          image: "",
-          storageId: undefined,
-          is_ai_generated: true,
-        }
-      );
-      console.log(`[AI FACTS] ✅ Inserted: ${fact.title}`);
-      factIds.push(id);
-    }
-
-    // 4️⃣ Generate and insert image facts
+    // 4️⃣ Handle image-needed facts
     const IMAGE_RATE_LIMIT = 8;
     const IMAGE_DELAY = 6000;
     const imageChunks = chunkArray(imageFacts, IMAGE_RATE_LIMIT);
@@ -180,8 +182,20 @@ export const generateAIFactsAction = internalAction({
       console.log(`[AI FACTS] ⚡ Image chunk ${i + 1}/${imageChunks.length}`);
 
       for (const f of chunk) {
-        console.log(`[AI FACTS] 🖼️ Generating for: "${f.title}"`);
+        // Lookup category again
+        const category = categories.find(
+          (c) => c.name.toLowerCase() === f.category.toLowerCase()
+        );
+        if (!category) continue;
+
         try {
+          // 1️⃣ Generate embedding
+          const embedding = await ctx.runAction(
+            internal.functions.embedGemini.embedGeminiText,
+            { text: f.title + "\n" + f.content }
+          );
+
+          // 2️⃣ Generate image
           const imageResp = await ai.models.generateContent({
             model: "gemini-2.0-flash-preview-image-generation",
             contents: `
@@ -196,9 +210,7 @@ export const generateAIFactsAction = internalAction({
               Title: ${f.title}
               Content: ${f.content}
             `,
-            config: {
-              responseModalities: ["IMAGE", "TEXT"],
-            },
+            config: { responseModalities: ["IMAGE", "TEXT"] },
           });
 
           const inlineDataPart =
@@ -207,7 +219,7 @@ export const generateAIFactsAction = internalAction({
             );
           const b64 = inlineDataPart?.inlineData?.data ?? "";
           if (!b64) {
-            console.warn(`[AI FACTS] ⚠️ No image for "${f.title}"`);
+            console.warn(`[AI FACTS] ⚠️ No image for "${f.title}", skipping`);
             continue;
           }
 
@@ -217,27 +229,25 @@ export const generateAIFactsAction = internalAction({
           const storageId = await ctx.storage.store(blob);
           const imageUrl = await ctx.storage.getUrl(storageId);
 
-          const category = categories.find(
-            (c) => c.name.toLowerCase() === f.category.toLowerCase()
-          );
-          if (!category) continue;
-
-          const id = await ctx.runMutation(
-            internal.functions.insertAIFact.insertAIFact,
+          // Insert fact with image
+          const { factId } = await ctx.runMutation(
+            internal.functions.insertOrUpdateAIFact.insertOrUpdateAIFact,
             {
-              categoryId: category._id,
               title: f.title,
               content: f.content,
-              image: imageUrl ?? "",
+              categoryId: category._id,
+              image: imageUrl ?? undefined,
               storageId,
+              embedding,
               is_ai_generated: true,
             }
           );
           console.log(`[AI FACTS] ✅ Inserted with image: ${f.title}`);
-          factIds.push(id);
+          factIds.push(factId);
         } catch (err) {
-          console.error(`[AI FACTS] ❌ Error with "${f.title}"`, err);
+          console.error(`[AI FACTS] ❌ Skipped image fact: ${f.title}`, err);
         }
+
         await new Promise((r) => setTimeout(r, IMAGE_DELAY));
       }
 
