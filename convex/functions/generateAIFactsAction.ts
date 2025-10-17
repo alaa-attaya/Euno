@@ -101,17 +101,7 @@ export const generateAIFactsAction = internalAction({
       - If you cannot fit all 40 items, return fewer — but keep valid JSON.
       - Every array must start with "[" and end with "]".
       - Validate your JSON structure before sending.
-
-      EXAMPLE OUTPUT FORMAT:
-      [
-        {
-          "category": "Science",
-          "title": "Water Boils at 100°C",
-          "content": "Under normal atmospheric pressure, water transitions from liquid to gas at 100 degrees Celsius, demonstrating a key concept in thermodynamics.",
-          "imageNeeded": false
-        }
-      ]
-      `;
+    `;
 
     console.log("[AI FACTS] Sending prompt to Gemini...");
     const textResp = await ai.models.generateContent({
@@ -172,6 +162,7 @@ export const generateAIFactsAction = internalAction({
           title: fact.title,
           content: fact.content,
           image: "",
+          storageId: undefined,
           is_ai_generated: true,
         }
       );
@@ -194,17 +185,17 @@ export const generateAIFactsAction = internalAction({
           const imageResp = await ai.models.generateContent({
             model: "gemini-2.0-flash-preview-image-generation",
             contents: `
-                      Generate a small, clear, educational illustration for this fact.
-                      - Avoid any text, labels, or captions.
-                      - Keep the illustration simple and visually balanced.
-                      - Target square format, around 300x300 to 300x400px.
-                      - Avoid busy backgrounds; no text or logos.
-                      - Generate at medium quality.
-                      - Keep the image under ~400KB.
-                      Fact:
-                      Title: ${f.title}
-                      Content: ${f.content}
-                      `,
+              Generate a small, clear, educational illustration for this fact.
+              - Avoid any text, labels, or captions.
+              - Keep the illustration simple and visually balanced.
+              - Target square format, around 300x300 to 300x400px.
+              - Avoid busy backgrounds; no text or logos.
+              - Generate at medium quality.
+              - Keep the image under ~400KB.
+              Fact:
+              Title: ${f.title}
+              Content: ${f.content}
+            `,
             config: {
               responseModalities: ["IMAGE", "TEXT"],
             },
@@ -238,6 +229,7 @@ export const generateAIFactsAction = internalAction({
               title: f.title,
               content: f.content,
               image: imageUrl ?? "",
+              storageId,
               is_ai_generated: true,
             }
           );

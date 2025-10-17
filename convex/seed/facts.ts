@@ -20,18 +20,14 @@ export async function seedFacts({
       title: string;
       content: string;
       image?: string;
+      storageId?: Id<"_storage">;
     }>
   > = {
+    // Example:
     // General: [
     //   {
     //     title: "The Sun is Hot",
     //     content: "The sun's surface temperature is around 5,500C.",
-    //   },
-    // ],
-    // Science: [
-    //   {
-    //     title: "Light Travels Fast",
-    //     content: "Light travels at 299,792,458 meters per second in a vacuum.",
     //   },
     // ],
   };
@@ -43,29 +39,33 @@ export async function seedFacts({
     if (!categoryId) continue;
 
     for (const fact of facts) {
-      // Check if the fact already exists in this category by title
+      // 1️⃣ Check if the fact already exists in this category by title
       const existingFact = await db
         .query("facts")
         .filter(
           (f: any) =>
             f.categoryId === categoryId &&
-            f.title.toLowerCase() === fact.title.toLowerCase()
+            f.title.toLowerCase().trim() === fact.title.toLowerCase().trim()
         )
         .first();
 
       if (existingFact) {
-        // Use existing fact ID
         inserted[fact.title] = existingFact._id;
         continue;
       }
 
-      // Insert new fact
+      // 2️⃣ Prepare fields safely
+      const sanitizedImage = fact.image?.trim() || undefined;
+      const sanitizedStorageId = fact.storageId ?? undefined;
+
+      // 3️⃣ Insert new fact
       const id = await db.insert("facts", {
-        title: fact.title,
-        content: fact.content,
+        title: fact.title.trim(),
+        content: fact.content.trim(),
         categoryId,
         is_ai_generated: false,
-        image: fact.image,
+        image: sanitizedImage,
+        storageId: sanitizedStorageId,
       });
 
       inserted[fact.title] = id;
