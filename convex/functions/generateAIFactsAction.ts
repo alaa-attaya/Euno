@@ -1,3 +1,4 @@
+// functions/generateAIFactsAction.ts
 import { GoogleGenAI } from "@google/genai";
 import { internal } from "../_generated/api";
 import { internalAction } from "../_generated/server";
@@ -79,34 +80,39 @@ export const generateAIFactsAction = internalAction({
       `[AI FACTS] Categories: ${categories.map((c) => c.name).join(", ")}`
     );
 
-    // 2️⃣ Build prompt
+    // 2️⃣ Build prompt (keep yours exactly as-is)
     const prompt = `
-      You are a JSON generator. Output only valid JSON — no explanations, no markdown, no comments, and no text before or after.
+    You are a JSON generator. Output only valid JSON — no explanations, no markdown, no comments, and no text before or after.
 
-      TASK:
-      Generate exactly 30 UNIQUE, surprising, and lesser-known educational facts across the following categories:
-      ${categories.map((c) => c.name).join(", ")}.
+    TASK:
+    Generate exactly 30 UNIQUE, surprising, and lesser-known educational facts that are **evenly distributed across the following categories**:
+    ${categories.map((c) => c.name).join(", ")}.
 
-      UNIQUENESS REQUIREMENTS:
-      - Avoid common knowledge or obvious facts
-      - Focus on surprising, counterintuitive, or little-known information
-      - Each fact should teach something unexpected
-      - Vary the style and approach for each fact
-      - Include specific numbers, dates, or examples when possible
-      
-      Each fact must be an object with exactly these keys:
-      - "category": string (must be one of the listed categories)
-      - "title": string (short, catchy, ≤60 characters, avoid quotes or apostrophes)
-      - "content": string (1-3 sentences, informative and factual, up to 350 characters)
-      - "imageNeeded": boolean (true if a simple illustration would help visualize the fact)
+    DISTRIBUTION RULES:
+    - The 30 total facts must be divided as evenly as possible among all categories.
+    - Each fact must clearly belong to one of the listed categories.
+    - The "category" field must EXACTLY match one of the names above.
 
-      STRICT RULES:
-      - Output ONLY a valid JSON array.
-      - No markdown, code fences, or text outside the JSON.
-      - Do not use single quotes inside strings.
-      - If you cannot fit all 40 items, return fewer — but keep valid JSON.
-      - Every array must start with "[" and end with "]".
-      - Validate your JSON structure before sending.
+    UNIQUENESS REQUIREMENTS:
+    - Avoid common knowledge or obvious facts.
+    - Focus on surprising, counterintuitive, or little-known information.
+    - Each fact should teach something unexpected.
+    - Vary the style and approach for each fact.
+    - Include specific numbers, dates, or examples when possible.
+
+    Each fact must be an object with exactly these keys:
+    - "category": string (must be one of the listed categories)
+    - "title": string (short, catchy, ≤60 characters, avoid quotes or apostrophes)
+    - "content": string (1-3 sentences, informative and factual, up to 350 characters)
+    - "imageNeeded": boolean (true if a simple illustration would help visualize the fact)
+
+    STRICT RULES:
+    - Output ONLY a valid JSON array.
+    - No markdown, code fences, or text outside the JSON.
+    - Do not use single quotes inside strings.
+    - Output exactly 30 items, evenly distributed by category.
+    - Every array must start with "[" and end with "]".
+    - Validate your JSON structure before sending.
     `;
 
     console.log("[AI FACTS] Sending prompt to Gemini...");
@@ -122,12 +128,15 @@ export const generateAIFactsAction = internalAction({
     const facts = sanitizeFacts(parseJsonSafe(rawText));
     console.log(`[AI FACTS] Parsed ${facts.length} facts`);
 
-    const imageFacts: AIFact[] = [];
+    const imageFacts: (AIFact & { embedding: number[] })[] = [];
     const factIds: string[] = [];
+
+    const VECTOR_SIM_THRESHOLD = 0.95;
+    const IMAGE_RATE_LIMIT = 8;
+    const IMAGE_DELAY = 6000;
 
     // 3️⃣ Process facts
     for (const fact of facts) {
-      // Lookup category
       const category = categories.find(
         (c) => c.name.toLowerCase() === fact.category.toLowerCase()
       );
@@ -138,18 +147,36 @@ export const generateAIFactsAction = internalAction({
         continue;
       }
 
-      if (fact.imageNeeded) {
-        imageFacts.push(fact);
+      // Generate embedding
+      const embedding = await ctx.runAction(
+        internal.functions.embedGemini.embedGeminiText,
+        { text: fact.title + "\n" + fact.content }
+      );
+
+      // ✅ Semantic deduplication via vector search
+      const similar = await ctx.vectorSearch(
+        "embeddings_1536",
+        "by_embedding",
+        {
+          vector: embedding,
+          limit: 1,
+          filter: (q) => q.eq("categoryId", category._id),
+        }
+      );
+      if (similar.length > 0 && similar[0]._score >= VECTOR_SIM_THRESHOLD) {
+        console.log(
+          `[AI FACTS] ⚠️ Skipping fact "${fact.title}" - too similar to existing`
+        );
         continue;
       }
 
-      // Text-only fact insertion
-      try {
-        const embedding = await ctx.runAction(
-          internal.functions.embedGemini.embedGeminiText,
-          { text: fact.title + "\n" + fact.content }
-        );
+      if (fact.imageNeeded) {
+        imageFacts.push({ ...fact, embedding });
+        continue;
+      }
 
+      // Insert text-only fact
+      try {
         const { factId } = await ctx.runMutation(
           internal.functions.insertOrUpdateAIFact.insertOrUpdateAIFact,
           {
@@ -172,9 +199,7 @@ export const generateAIFactsAction = internalAction({
       }
     }
 
-    // 4️⃣ Handle image-needed facts
-    const IMAGE_RATE_LIMIT = 8;
-    const IMAGE_DELAY = 6000;
+    // 4️⃣ Handle image-needed facts in chunks
     const imageChunks = chunkArray(imageFacts, IMAGE_RATE_LIMIT);
 
     for (let i = 0; i < imageChunks.length; i++) {
@@ -182,20 +207,13 @@ export const generateAIFactsAction = internalAction({
       console.log(`[AI FACTS] ⚡ Image chunk ${i + 1}/${imageChunks.length}`);
 
       for (const f of chunk) {
-        // Lookup category again
         const category = categories.find(
           (c) => c.name.toLowerCase() === f.category.toLowerCase()
         );
         if (!category) continue;
 
         try {
-          // 1️⃣ Generate embedding
-          const embedding = await ctx.runAction(
-            internal.functions.embedGemini.embedGeminiText,
-            { text: f.title + "\n" + f.content }
-          );
-
-          // 2️⃣ Generate image
+          // Generate image
           const imageResp = await ai.models.generateContent({
             model: "gemini-2.0-flash-preview-image-generation",
             contents: `
@@ -238,7 +256,7 @@ export const generateAIFactsAction = internalAction({
               categoryId: category._id,
               image: imageUrl ?? undefined,
               storageId,
-              embedding,
+              embedding: f.embedding,
               is_ai_generated: true,
             }
           );

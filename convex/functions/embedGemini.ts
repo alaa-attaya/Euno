@@ -13,7 +13,7 @@ export const embedGeminiText = internalAction({
     const result = await ai.models.embedContent({
       model: "gemini-embedding-001",
       contents: text,
-      config: { taskType: "SEMANTIC_SIMILARITY" },
+      config: { taskType: "SEMANTIC_SIMILARITY", outputDimensionality: 1536 },
     });
 
     const values = result.embeddings?.[0]?.values;

@@ -51,22 +51,38 @@ export const seedFacts = internalAction({
       const categoryId = categoryMap[categoryName];
       if (!categoryId) continue; // skip if category doesn't exist
 
+      // seedFacts.ts
       for (const fact of facts) {
-        // Generate embedding
         const embedding = await ctx.runAction(
           internal.functions.embedGemini.embedGeminiText,
           { text: `${fact.title}. ${fact.content}` }
         );
 
-        // Insert or update the fact
+        const similar = await ctx.vectorSearch(
+          "embeddings_1536",
+          "by_embedding",
+          {
+            vector: embedding,
+            limit: 1,
+            filter: (q) => q.eq("categoryId", categoryId),
+          }
+        );
+
+        const threshold = 0.95;
+        if (similar.length > 0 && similar[0]._score >= threshold) {
+          console.log(`[SEED] Skipping fact "${fact.title}" - too similar`);
+          continue;
+        }
+
+        // Only insert if not too similar
         const { factId, inserted } = await ctx.runMutation(
           internal.seed.facts.insertOrUpdateFact,
           {
             title: fact.title,
             content: fact.content,
             categoryId,
-            image: fact.image ?? undefined,
-            storageId: fact.storageId ?? undefined,
+            image: fact.image,
+            storageId: fact.storageId,
             embedding,
           }
         );
