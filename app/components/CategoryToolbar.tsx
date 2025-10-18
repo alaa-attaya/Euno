@@ -59,6 +59,7 @@ export default function CategoryToolbar() {
             Array.from({ length: 5 }).map((_, i) => (
               <View
                 key={i}
+                className="animate-pulse"
                 style={{
                   width: 64,
                   height: 64,
