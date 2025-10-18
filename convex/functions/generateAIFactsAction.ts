@@ -80,7 +80,7 @@ export const generateAIFactsAction = internalAction({
       `[AI FACTS] Categories: ${categories.map((c) => c.name).join(", ")}`
     );
 
-    // 2️⃣ Build prompt (keep yours exactly as-is)
+    // 2️⃣ Build prompt
     const prompt = `
     You are a JSON generator. Output only valid JSON — no explanations, no markdown, no comments, and no text before or after.
 
@@ -131,7 +131,7 @@ export const generateAIFactsAction = internalAction({
     const imageFacts: (AIFact & { embedding: number[] })[] = [];
     const factIds: string[] = [];
 
-    const VECTOR_SIM_THRESHOLD = 0.95;
+    const VECTOR_SIM_THRESHOLD = 0.9;
     const IMAGE_RATE_LIMIT = 8;
     const IMAGE_DELAY = 6000;
 

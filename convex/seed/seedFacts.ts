@@ -68,7 +68,7 @@ export const seedFacts = internalAction({
           }
         );
 
-        const threshold = 0.95;
+        const threshold = 0.9;
         if (similar.length > 0 && similar[0]._score >= threshold) {
           console.log(`[SEED] Skipping fact "${fact.title}" - too similar`);
           continue;
