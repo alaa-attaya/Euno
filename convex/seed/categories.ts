@@ -4,13 +4,6 @@ export const seedCategories = internalMutation({
   handler: async (ctx) => {
     const categories = [
       {
-        name: "General",
-        description: "Miscellaneous fun facts",
-        iconSet: "MaterialIcons",
-        iconName: "category",
-        iconColor: "#F6757A",
-      },
-      {
         name: "Science",
         description: "Fun science facts",
         iconSet: "Entypo",

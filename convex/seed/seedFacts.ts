@@ -14,13 +14,6 @@ export const seedFacts = internalAction({
 
     // Facts grouped by category
     const factsByCategory: Record<string, FactEntry[]> = {
-      //   General: [
-      //     {
-      //       title: "Bananas are radioactive",
-      //       content:
-      //         "Bananas contain potassium-40, a naturally radioactive isotope.",
-      //     },
-      //   ],
       //   Science: [
       //     {
       //       title: "Water Expands When Frozen",
